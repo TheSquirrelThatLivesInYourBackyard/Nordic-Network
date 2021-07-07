@@ -2,12 +2,50 @@ var values = [];
 var host = "N/A";
 var port = -1;
 
+var err_reported = false;
+
 $(document).ready(function() {
-    $.get("../properities.txt", function(data) {
+    $.get("properties.txt", function(data) {
         values = data.split("\n");
-		return values;
+		
+		host = values[0].trim();
+		port = Number(values[1]);
+	}).fail(function() {
+		swal("Failed to get server IP", "Please contact our admins about this error so we can fix it as soon as possible!", "error");
+	}).done(function() {
+		if(port) {
+			var socket = io('https://' + host + ":" + port);
+		} else {
+			var socket = io('https://' + host);
+		}
+		
+		socket.on('connect_error', function() {
+			if(!err_reported) {
+				swal("Unable to connect to server.", "It seems our game servers are down.\nPlease be patient while we work on a fix!", "error");
+				err_reported = true;
+			}
+		});
+		
+		socket.on('disconnect', function() {
+			swal("Disconnected from server", "Hmm, looks like something went wrong. Please report this to our development team at https://github.com/NN-Dev-Team/Nordic-Network/issues", "error");
+		});
+		
+		socket.on('login-complete', function(data){
+			if(data.success){
+				addCookie("user_id", data.info.user, 1);
+				addCookie("session", data.info.session, 1);
+				
+				window.location.href = "/";
+			} else {
+				swal("Failed to login", "Error: " + data.error + "\nID: " + data.id, "error");
+			}
+		});
+		
+		$('form').submit(function(){
+			socket.emit('login', {email: $('#email').val(), pass: $('#pwd').val()});
+			return false;
+		});
     }, 'text');
-	return values;
 });
 
 function addCookie(name, value, time) {
@@ -15,41 +53,4 @@ function addCookie(name, value, time) {
     day.setTime(day.getTime() + (time*24*60*60*1000));
     var expires = "expires="+day.toUTCString();
     document.cookie = name + "=" + value + "; " + expires + "; path=/";
-}
-
-host = values[0];
-port = Number(values[1]);
-
-if(host == "N/A" || port == -1) {
-	console.log("ERROR: Couldn't find host/port");
-} else {
-	console.log("Creating socket...");
-	var socket = io('http://' + host + ":" + port);
-	if(typeof socket === 'undefined') {
-		console.log("Failed to create socket");
-	} else {
-		console.log("Successfully created socket");
-	}
-}
-
-socket.on('login-complete', function(data){
-	if(data.success){
-		console.log("Successfully logged in!");
-		addCookie("session", data.session, 1);
-	} else {
-		console.log("Failed to login.");
-		console.log("Reason: ", data.reason);
-		console.log("ID: ", data.id);
-	}
-});
-
-$('form').submit(function(){
-	console.log("Logging in...");
-    socket.emit('login', {email: $('#email').val(), pass: $('#passwrd'.val())});
-    return false;
-});
-
-function login(email, passwrd) {
-	console.log("Logging in...");
-	socket.emit('login', {email: email, pass: passwrd});
 }

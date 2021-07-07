@@ -1,0 +1,38 @@
+<html>
+	<head>
+		<base href="https://nn-dev-team.github.io/Nordic-Network/public/">
+		<!-- Load universal CSS from file -->
+		<link rel="stylesheet" href="css/universal.css">
+		<!-- Load custom CSS from file -->
+		<link rel="stylesheet" href="css/index.css">
+		<!-- Load bootstrap stylesheet from CDN -->
+		<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"> <!-- Is this really necessary? -->
+	</head>
+	<body id="cookies">
+		<div class="container-fluid">
+			<div>
+				<p>This site uses cookies to store various data. By using the site, you accept <a href="#">our Cookie policy.</a><button id="cookie-notice-button" class="btn btn-default" onclick="acceptCookies()">I accept</button></p>
+			</div>
+		</div>
+		
+		<script>
+			function getCookie(name) {
+				name += "=";
+				var ca = document.cookie.split(';');
+				for(var i=0; i<ca.length; i++) {
+					var c = ca[i];
+					while (c.charAt(0)==' ') c = c.substring(1);
+					if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
+				}
+				return "";
+			}
+			
+			var cookiesAccepted = getCookie('displayCookieConsent');
+			if(cookiesAccepted != 'y') {
+				$('#cookie-notice').css('display', 'block');
+				$('#cookie-notice-button').css('display', 'inline-block');
+				$('#jumbo-container').css('margin-bottom', '30vh');
+			}
+		</script>
+	</body>
+</html>

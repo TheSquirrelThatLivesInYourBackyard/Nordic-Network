@@ -2,50 +2,50 @@ var values = [];
 var host = "N/A";
 var port = -1;
 
+var err_reported = false;
+
 $(document).ready(function() {
-    $.get("../properities.txt", function(data) {
+    $.get("properties.txt", function(data) {
         values = data.split("\n");
-		return values;
+		
+		host = values[0].trim();
+		port = Number(values[1]);
+	}).fail(function() {
+		swal("Failed to get server IP", "Please contact our admins about this error so we can fix it as soon as possible!", "error");
+	}).done(function() {
+		if(port) {
+			var socket = io('https://' + host + ":" + port);
+		} else {
+			var socket = io('https://' + host);
+		}
+		
+		socket.on('connect_error', function() {
+			if(!err_reported) {
+				swal("Unable to connect to server.", "It seems our game servers are down.\nPlease be patient while we work on a fix!", "error");
+				err_reported = true;
+			}
+		});
+		
+		socket.on('disconnect', function() {
+			swal("Disconnected from server", "Hmm, looks like something went wrong. Please report this to our development team at https://github.com/NN-Dev-Team/Nordic-Network/issues", "error");
+		});
+		
+		socket.on('reg-complete', function(data){
+			if(data.success){
+				location.reload();
+			} else {
+				swal("Failed to register", "Reason: " + data.error + "\nID: " + data.id, "error");
+			}
+		});
+		
+		$('form').submit(function(){
+			if($('.passwrd:eq(0)').val() == $('.passwrd:eq(1)').val()) {
+				socket.emit('register', {email: $('#email').val(), pass: $('.passwrd:eq(0)').val()});
+			} else {
+				swal("Failed to register", "Passwords do not match.", "error");
+			}
+			
+			return false;
+		});
     }, 'text');
-	return values;
 });
-
-host = values[0];
-port = Number(values[1]);
-
-if(host == "N/A" || port == -1) {
-	console.log("ERROR: Couldn't find host/port");
-} else {
-	console.log("Creating socket...");
-	var socket = io('http://' + host + ":" + port);
-	if(typeof socket === 'undefined') {
-		console.log("Failed to create socket");
-	} else {
-		console.log("Successfully created socket");
-	}
-}
-
-socket.on('reg-complete', function(data){
-	if(data.success){
-		console.log("Successfully created account!");
-	} else {
-		console.log("Failed to create account.");
-		console.log("Reason: ", data.reason);
-		console.log("ID: ", data.id);
-	}
-});
-
-socket.on('reg-status', function(data) {
-	console.log(data);
-});
-
-$('form').submit(function(){
-	console.log("Registering...");
-    socket.emit('register', {email: $('#email').val(), pass: $('#passwrd'.val())});
-    return false;
-});
-
-function register(email, passwrd) {
-	console.log("Registering...");
-	socket.emit('register', {email: email, pass: passwrd});
-}
